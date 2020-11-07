@@ -7,6 +7,9 @@ import 'main.dart';
 import 'package:flutter/material.dart';
 
 class Maps extends StatefulWidget {
+  final GlobalKey mainKey;
+  Maps({Key key, this.mainKey}) : super(key: key);
+
   @override
   _MapsState createState() => _MapsState();
 }
@@ -46,14 +49,29 @@ class _MapsState extends State<Maps> {
       position: LatLng(55.686992, 21.145443),
       infoWindow: InfoWindow(title: 'Hesburger'),
       icon: _markerIcon,
-      onTap: () => setMarkerData('Hesburger', LatLng(55.686992, 21.145443)),
+      onTap: () => setMarkerData('Hesbuger'),
     );
 
     _markers.add(marker1);
     _markers.add(marker2);
   }
 
-  void setMarkerData(String title, LatLng latLng) {}
+  void setMarkerData(String title) {
+    var newAppBarr = new AppBar(
+      title: Text(
+        title,
+        style: TextStyle(
+          fontSize: 15,
+          letterSpacing: 10.0,
+          color: Colors.white,
+        ),
+      ),
+      toolbarHeight: 35.0,
+      backgroundColor: Colors.red,
+    );
+
+    //widget.mainKey.currentContext;
+  }
 
   // Recreates map which was set in controller
   void _onMapCreated(GoogleMapController controller) {
@@ -90,6 +108,7 @@ class _MapsState extends State<Maps> {
       markers: _markers,
       myLocationEnabled: true,
       myLocationButtonEnabled: true,
+
       //zoomControlsEnabled: false,
     );
   }
