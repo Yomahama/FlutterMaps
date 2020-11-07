@@ -1,0 +1,75 @@
+[
+    {
+        "id": "0",
+        "latidudeLongtidude": "55.700235,21.168321",
+        "title": "Kingo kebabai",
+        "address": "Šilutės pl. 11",
+        "number": "860800413",
+        "imageSource": "https://www.mildelfina.lt/galerija/storage/cache/images/000/649/laukoreklama-king,large.1478765094.jpg"
+    },
+    {
+        "id": "1",
+        "latidudeLongtidude": "55.692045,21.153976",
+        "title": "McDonald's",
+        "address": "Taikos pr. 61C",
+        "number": "846345353",
+        "imageSource": "https://madeinklaipeda.lt/wp-content/uploads/2016/11/Atnaujintas_McDonalds_restoranas_Klaip%C4%97doje.jpg"
+    },
+    {
+        "id": "2",
+        "latidudeLongtidude": "55.692215,21.155103",
+        "title": "Hesburger",
+        "address": "Taikos pr. 61, AKROPOLIS",
+        "number": "+37067302990",
+        "imageSource": "https://www.hesburger.lt/clients/hesburger/output/ravintolakuva.php?id=28151"
+    },
+    {
+        "id": "3",
+        "latidudeLongtidude": "55.686992,21.145443",
+        "title": "Hesburger",
+        "address": "Minijos g. 90",
+        "number": "+37069839246",
+        "imageSource": "https://www.hesburger.lt/clients/hesburger/output/ravintolakuva.php?id=28157"
+    },
+    {
+        "id": "4",
+        "latidudeLongtidude": "55.665891,21.175754",
+        "title": "Hesburger",
+        "address": "Taikos pr. 139, MOLAS",
+        "number": "+37067302623",
+        "imageSource": "https://www.hesburger.lt/clients/hesburger/output/ravintolakuva.php?id=28159"
+    },
+    {
+        "id": "5",
+        "latidudeLongtidude": "55.682754,21.187219",
+        "title": "Hesburger",
+        "address": "Svajonės g. 33",
+        "number": "+37061530639",
+        "imageSource": "https://scontent.frix7-1.fna.fbcdn.net/v/t1.0-9/92661397_3090461594338306_7093474759513473024_o.jpg?_nc_cat=107&ccb=2&_nc_sid=730e14&_nc_ohc=7QAvLc5QRTwAX-k7Qyf&_nc_ht=scontent.frix7-1.fna&oh=2c68570d8f58a4eff84ef77ff08959a1&oe=5FCD93A2"
+    },
+    {
+        "id": "6",
+        "latidudeLongtidude": "55.718352,21.145126",
+        "title": "Hesburger",
+        "address": "Priestočio g. 30",
+        "number": "+37067294177",
+        "imageSource": "https://lh3.googleusercontent.com/proxy/rGQqr9Dv2kJF8U_ZSotxutLw2SGaLEilhMjfXgNpedE72AboxJU36xpyXdP2UamFy_kWwMiPp_O5oK7v_iAYIAE6YUc5pPfBZzft4P9HvbAsrfik8A"
+    },
+    {
+        "id": "7",
+        "latidudeLongtidude": "55.706480,21.202395",
+        "title": "Hesburger",
+        "address": "Sudmantai",
+        "number": "+37066517025",
+        "imageSource": "https://www.hesburger.lt/clients/hesburger/output/ravintolakuva.php?id=28161"
+    },
+    {
+        "id": "8",
+        "latidudeLongtidude": "55.706302,21.238304",
+        "title": "Hesburger",
+        "address": "Jakai",
+        "number": "+37068323399",
+        "imageSource": "https://www.hesburger.lt/clients/hesburger/output/ravintolakuva.php?id=28153"
+    }
+
+]

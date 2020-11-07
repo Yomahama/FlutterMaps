@@ -1,12 +1,18 @@
 import 'dart:collection';
-
+import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-//import 'package:flutter_app/maps.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_app/foodMarker.dart';
 import 'package:hexcolor/hexcolor.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:location/location.dart';
+import 'package:location/location.dart' as LocationManager;
+import 'package:flutter_google_places/flutter_google_places.dart';
+import 'package:google_maps_webservice/places.dart';
 
+GoogleMapsPlaces _places = GoogleMapsPlaces(
+    apiKey:
+        'https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=kebabai&inputtype=textquery&fields=photos,formatted_address,name,rating,opening_hours,geometry&key=AIzaSyBhOFdbqSqGtFoWJIL6K4ezlRgzwtzWXio');
 void main() {
   runApp(MyApp());
 }
@@ -35,7 +41,7 @@ class _HomeState extends State<Home> {
   bool _isDay() {
     var hour = DateTime.now().hour;
 
-    if (hour >= 18 && hour <= 8) {
+    if (hour >= 18 || hour <= 8) {
       return false;
     }
 
@@ -55,10 +61,12 @@ class _HomeState extends State<Home> {
 
   // Title of the app bar
   String _appTitle = "KLAIPĖDA";
+  bool isActive = false;
 
   // This function is called once, when app is loaded.
   void initState() {
     super.initState();
+    _getNearbyPlaces();
     _setMarkerIcon();
   }
 
@@ -67,9 +75,10 @@ class _HomeState extends State<Home> {
   Widget build(BuildContext context) {
     final List<Widget> _widgetOptions = <Widget>[
       Container(
-        color: Colors.red,
+        color: Colors.deepPurpleAccent,
+        child: Text('i duombaze!'),
       ),
-      _Maps(),
+      _maps(),
       Container(
         color: Colors.yellow,
       )
@@ -125,7 +134,7 @@ class _HomeState extends State<Home> {
     }
 
     String style = await DefaultAssetBundle.of(context)
-        .loadString('assets/map_styles/${night}');
+        .loadString('assets/map_styles/$time');
 
     _mapController.setMapStyle(style);
   }
@@ -140,11 +149,11 @@ class _HomeState extends State<Home> {
 
   Set<Marker> _markers = HashSet<Marker>();
 
-  void _setMarkerData(String name, String src) {
+  void _setMarkerData(FoodMarker marker) {
     setState(() {
-      _appTitle = name;
+      _appTitle = marker.title;
 
-      _showSheetData(src);
+      _showSheetData(marker.imageSource);
     });
   }
 
@@ -192,26 +201,54 @@ class _HomeState extends State<Home> {
         });
   }
 
-  void _setMarkers() {
-    Marker marker1 = Marker(
-      markerId: MarkerId('0'),
-      position: LatLng(55.692045, 21.153976),
-      infoWindow: InfoWindow(title: "McDonald"),
-      icon: _markerIcon,
-      onTap: () => _setMarkerData("MCDONALD",
-          'https://upload.wikimedia.org/wikipedia/commons/5/5c/McDonald%27s_klaipeda.jpg'),
-    );
-    Marker marker2 = Marker(
-      markerId: MarkerId('1'),
-      position: LatLng(55.686992, 21.145443),
-      infoWindow: InfoWindow(title: 'Hesburger'),
-      icon: _markerIcon,
-      onTap: () => _setMarkerData('HESBURGER',
-          'https://www.hesburger.lt/clients/hesburger/output/ravintolakuva.php?id=28161'),
-    );
+  //https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=Museum%20of%20Contemporary%20Art%20Australia&inputtype=textquery&fields=photos,formatted_address,name,rating,opening_hours,geometry&key=AIzaSyBhOFdbqSqGtFoWJIL6K4ezlRgzwtzWXio
+  void _getNearbyPlaces() async {
+    var location = Location(55.7033, 21.1443);
+    final result = await _places.searchNearbyWithRadius(location, 10);
+    setState(() {
+      if (result.status == 'OK') {
+        result.results.forEach((f) {
+          final marker = new Marker(
+            position: LatLng(f.geometry.location.lat, f.geometry.location.lng),
+            infoWindow: InfoWindow(title: '${f.name}, $f.types?.first'),
+            icon: _markerIcon,
+            markerId: MarkerId(f.id),
+          );
 
-    _markers.add(marker1);
-    _markers.add(marker2);
+          _markers.add(marker);
+        });
+      } else {
+        print("nepavyko-------------------------------------------");
+      }
+    });
+  }
+
+  // Loads json file of places to eat from assets
+  Future<String> _loadJsonFromAsset(String path) async {
+    return await rootBundle.loadString(path);
+  }
+
+  // Sets marker for each place
+  void _setMarkers() async {
+    String jsonString = await _loadJsonFromAsset('assets/food_data/foods.json');
+    var foodsJson = jsonDecode(jsonString);
+
+    for (var food in foodsJson) {
+      FoodMarker foodMarker = FoodMarker.fromJson(food);
+
+      var coordinates = foodMarker.latLng.split(',');
+
+      Marker marker = new Marker(
+        markerId: MarkerId(foodMarker.id),
+        position:
+            LatLng(double.parse(coordinates[0]), double.parse(coordinates[1])),
+        infoWindow: InfoWindow(title: foodMarker.title),
+        icon: _markerIcon,
+        onTap: () => _setMarkerData(foodMarker),
+      );
+
+      _markers.add(marker);
+    }
   }
 
   // Recreates map which was set in controller
@@ -223,7 +260,7 @@ class _HomeState extends State<Home> {
   }
 
   // GoogleMamps exctracted widget
-  Widget _Maps() {
+  Widget _maps() {
     return GoogleMap(
       onMapCreated: _onMapCreated,
       initialCameraPosition:

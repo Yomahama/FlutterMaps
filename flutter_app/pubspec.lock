@@ -36,6 +36,27 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.1.0-nullsafety.1"
+  cloud_firestore:
+    dependency: "direct dev"
+    description:
+      name: cloud_firestore
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.14.3"
+  cloud_firestore_platform_interface:
+    dependency: transitive
+    description:
+      name: cloud_firestore_platform_interface
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "2.2.0"
+  cloud_firestore_web:
+    dependency: transitive
+    description:
+      name: cloud_firestore_web
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.2.1"
   collection:
     dependency: transitive
     description:
@@ -57,11 +78,53 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.2.0-nullsafety.1"
+  firebase:
+    dependency: "direct dev"
+    description:
+      name: firebase
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "7.3.2"
+  firebase_core:
+    dependency: transitive
+    description:
+      name: firebase_core
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.5.2"
+  firebase_core_platform_interface:
+    dependency: transitive
+    description:
+      name: firebase_core_platform_interface
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "2.0.0"
+  firebase_core_web:
+    dependency: transitive
+    description:
+      name: firebase_core_web
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.2.1"
+  firebase_database:
+    dependency: "direct dev"
+    description:
+      name: firebase_database
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "4.3.0"
   flutter:
     dependency: "direct main"
     description: flutter
     source: sdk
     version: "0.0.0"
+  flutter_google_places:
+    dependency: "direct dev"
+    description:
+      name: flutter_google_places
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.2.6"
   flutter_plugin_android_lifecycle:
     dependency: transitive
     description:
@@ -93,6 +156,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.0.4"
+  google_maps_webservice:
+    dependency: "direct dev"
+    description:
+      name: google_maps_webservice
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.0.18"
   hexcolor:
     dependency: "direct main"
     description:
@@ -100,6 +170,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.0.6"
+  http:
+    dependency: transitive
+    description:
+      name: http
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.12.2"
   http_parser:
     dependency: transitive
     description:
@@ -156,6 +233,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.8.0-nullsafety.1"
+  pedantic:
+    dependency: transitive
+    description:
+      name: pedantic
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.9.2"
   plugin_platform_interface:
     dependency: transitive
     description:
@@ -163,6 +247,20 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.0.3"
+  quiver:
+    dependency: transitive
+    description:
+      name: quiver
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "2.1.5"
+  rxdart:
+    dependency: transitive
+    description:
+      name: rxdart
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.24.1"
   sky_engine:
     dependency: transitive
     description: flutter

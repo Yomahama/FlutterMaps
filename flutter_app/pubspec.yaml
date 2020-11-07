@@ -31,6 +31,11 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  cloud_firestore: ^0.14.3
+  firebase: ^7.3.2
+  firebase_database: ^4.3.0
+  flutter_google_places: ^0.2.6
+  google_maps_webservice: ^0.0.18
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -46,6 +51,7 @@ flutter:
   assets:
     - assets/map_styles/
     - assets/markers/
+    - assets/food_data/
   # - asset
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.
