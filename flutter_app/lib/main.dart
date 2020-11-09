@@ -1,18 +1,14 @@
 import 'dart:collection';
 import 'dart:convert';
+import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_app/foodMarker.dart';
 import 'package:hexcolor/hexcolor.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:location/location.dart' as LocationManager;
-import 'package:flutter_google_places/flutter_google_places.dart';
-import 'package:google_maps_webservice/places.dart';
+import 'package:location/location.dart';
 
-GoogleMapsPlaces _places = GoogleMapsPlaces(
-    apiKey:
-        'https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=kebabai&inputtype=textquery&fields=photos,formatted_address,name,rating,opening_hours,geometry&key=AIzaSyBhOFdbqSqGtFoWJIL6K4ezlRgzwtzWXio');
 void main() {
   runApp(MyApp());
 }
@@ -48,7 +44,7 @@ class _HomeState extends State<Home> {
     return true;
   }
 
-  int _currentIndex = 1;
+  int _currentIndex = 0;
 
   void _onTappedItem(int index) {
     setState(() {
@@ -59,24 +55,104 @@ class _HomeState extends State<Home> {
   // Global key for main widget
   final _mainKey = GlobalKey();
 
-  // Title of the app bar
-  String _appTitle = "KLAIPĖDA";
   bool isActive = false;
+
+  LatLng _currentLocation = LatLng(55.7033, 21.1443);
+
+  void _centerUserLocation() async {
+    var location = await Location().getLocation();
+
+    setState(() {
+      _currentLocation = LatLng(location.latitude, location.longitude);
+    });
+    _mapController.animateCamera(CameraUpdate.newCameraPosition(
+        CameraPosition(target: _currentLocation, zoom: 15)));
+  }
+
+  void _centerKlaipedaLocation() {
+    setState(() {
+      _currentLocation = LatLng(55.7033, 21.1443);
+    });
+
+    _mapController.animateCamera(CameraUpdate.newCameraPosition(
+        CameraPosition(target: _currentLocation, zoom: 15)));
+  }
+
+  Icon customIcon = Icon(
+    Icons.search,
+    size: 30,
+  );
+
+  // Title of the app bar
+  String _appTitle = "SKANAUS!";
+
+  TextEditingController _textController = new TextEditingController();
+
+  textListener() {
+    print(_textController);
+  }
+
+  Widget customSearchBar = Text(
+    'example',
+    style: TextStyle(
+      fontSize: 15,
+      letterSpacing: 8.0,
+      color: Colors.yellow[700],
+      //fontFamily: 'Roboto',
+    ),
+  );
+
+  void _showSearchBar(int index) {
+    if (customIcon.icon == Icons.search) {
+      setState(() {
+        customIcon = Icon(Icons.cancel);
+
+        customSearchBar = TextField(
+            controller: _textController,
+            textInputAction: TextInputAction.go,
+            decoration: InputDecoration(
+                border: InputBorder.none, hintText: 'Ieškoti vietų'),
+            style: TextStyle(color: Colors.white, fontSize: 16));
+      });
+    } else {
+      setState(() {
+        customIcon = Icon(Icons.search);
+        customSearchBar = Text(
+          _appTitle,
+          style: TextStyle(
+            fontSize: 15,
+            letterSpacing: 8.0,
+            color: Colors.yellow[700],
+            //fontFamily: 'Roboto',
+          ),
+        );
+      });
+    }
+  }
 
   // This function is called once, when app is loaded.
   void initState() {
     super.initState();
-    _getNearbyPlaces();
+    _textController.addListener(textListener());
+    //_getNearbyPlaces();
+    _getFoodLength();
     _setMarkerIcon();
   }
 
+  int _listCount = 0;
+  List<FoodMarker> _foodList = [];
   // App
   @override
   Widget build(BuildContext context) {
     final List<Widget> _widgetOptions = <Widget>[
-      Container(
-        color: Colors.deepPurpleAccent,
-        child: Text('i duombaze!'),
+      ListView.builder(
+        itemCount: _listCount,
+        itemBuilder: (context, index) {
+          var value = _foodList[index];
+          return FoodTile(
+            foodMarker: value,
+          ); //FoodTile(foodMarker: _foodList[index]);
+        },
       ),
       _maps(),
       Container(
@@ -85,37 +161,57 @@ class _HomeState extends State<Home> {
     ];
 
     return Scaffold(
-        key: _mainKey,
-        appBar: AppBar(
-          centerTitle: true,
-          title: Text(
-            _appTitle, //getAppBarTitle(),
-            style: TextStyle(
-              fontSize: 15,
-              letterSpacing: 10.0,
-              color: Colors.white,
-            ),
-          ),
-          toolbarHeight: 35.0,
-          backgroundColor: HexColor('212121'),
-        ),
-        body: _widgetOptions[_currentIndex],
-        bottomNavigationBar: CupertinoTabBar(
-          items: const <BottomNavigationBarItem>[
-            BottomNavigationBarItem(
-              icon: Icon(CupertinoIcons.list_dash),
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(CupertinoIcons.map),
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(CupertinoIcons.info),
+      key: _mainKey,
+      appBar: _currentIndex == 1
+          ? AppBar(
+              leading: IconButton(
+                  icon: Icon(
+                    Icons.adjust_outlined,
+                    size: 30,
+                  ),
+                  onPressed: () => _centerUserLocation()),
+              centerTitle: true,
+              actions: [
+                IconButton(
+                  icon: Icon(Icons.location_city, size: 30),
+                  onPressed: () => _centerKlaipedaLocation(),
+                ),
+                IconButton(
+                  icon: customIcon,
+                  onPressed: () => _showSearchBar(_currentIndex),
+                ),
+              ],
+              title: customSearchBar,
+              toolbarHeight: 50.0,
+              backgroundColor: HexColor('212121'),
             )
-          ],
-          currentIndex: 1,
-          onTap: _onTappedItem,
-          activeColor: Colors.white,
-        ));
+          : AppBar(
+              centerTitle: true,
+              actions: [
+                IconButton(
+                  icon: customIcon,
+                  onPressed: () => _showSearchBar(_currentIndex),
+                ),
+              ],
+              title: customSearchBar,
+              toolbarHeight: 50.0,
+              backgroundColor: HexColor('212121'),
+            ),
+      body: _widgetOptions[_currentIndex],
+      bottomNavigationBar: CupertinoTabBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(CupertinoIcons.list_dash),
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(CupertinoIcons.map),
+          )
+        ],
+        currentIndex: _currentIndex,
+        onTap: _onTappedItem,
+        activeColor: Colors.yellow[700],
+      ),
+    );
   }
 
   GoogleMapController _mapController;
@@ -153,79 +249,38 @@ class _HomeState extends State<Home> {
     setState(() {
       _appTitle = marker.title;
 
-      _showSheetData(marker.imageSource);
+      _showSheetData(marker);
     });
   }
 
-  void _showSheetData(String src) {
+  void _showSheetData(FoodMarker food) {
     showModalBottomSheet(
         context: context,
         builder: (BuildContext context) {
-          return Container(
-              color: Colors.grey,
-              child: Column(
-                children: [
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(0, 10, 0, 0),
-                    child: Text(
-                      _appTitle,
-                      style: TextStyle(
-                        letterSpacing: 10.0,
-                        fontSize: 25.0,
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 10),
-                  Card(
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(8.0))),
-                    child: Image.network(
-                      src,
-                      width: 8000,
-                      fit: BoxFit.fill,
-                    ),
-                  ),
-                  SizedBox(height: 10),
-                  Align(
-                    alignment: Alignment.bottomLeft,
-                    child: Text(
-                      'Reviews',
-                      style: TextStyle(
-                        letterSpacing: 10.0,
-                        fontSize: 25.0,
-                      ),
-                    ),
-                  ),
-                ],
-              ));
+          return FoodBottomSheet(food: food);
         });
-  }
-
-  //https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=Museum%20of%20Contemporary%20Art%20Australia&inputtype=textquery&fields=photos,formatted_address,name,rating,opening_hours,geometry&key=AIzaSyBhOFdbqSqGtFoWJIL6K4ezlRgzwtzWXio
-  void _getNearbyPlaces() async {
-    var location = Location(55.7033, 21.1443);
-    final result = await _places.searchNearbyWithRadius(location, 10);
-    setState(() {
-      if (result.status == 'OK') {
-        result.results.forEach((f) {
-          final marker = new Marker(
-            position: LatLng(f.geometry.location.lat, f.geometry.location.lng),
-            infoWindow: InfoWindow(title: '${f.name}, $f.types?.first'),
-            icon: _markerIcon,
-            markerId: MarkerId(f.id),
-          );
-
-          _markers.add(marker);
-        });
-      } else {
-        print("nepavyko-------------------------------------------");
-      }
-    });
   }
 
   // Loads json file of places to eat from assets
   Future<String> _loadJsonFromAsset(String path) async {
     return await rootBundle.loadString(path);
+  }
+
+  void _getFoodLength() async {
+    String jsonString = await _loadJsonFromAsset('assets/food_data/foods.json');
+    var foodsJson = jsonDecode(jsonString);
+
+    int count = 0;
+
+    for (var food in foodsJson) {
+      FoodMarker foodMarker = FoodMarker.fromJson(food);
+      _foodList.add(foodMarker);
+      count++;
+    }
+
+    setState(() {
+      _listCount = count;
+    });
   }
 
   // Sets marker for each place
@@ -263,13 +318,155 @@ class _HomeState extends State<Home> {
   Widget _maps() {
     return GoogleMap(
       onMapCreated: _onMapCreated,
-      initialCameraPosition:
-          CameraPosition(target: LatLng(55.7033, 21.1443), zoom: 15),
+      initialCameraPosition: CameraPosition(target: _currentLocation, zoom: 15),
       markers: _markers,
       myLocationEnabled: true,
       myLocationButtonEnabled: true,
 
       //zoomControlsEnabled: false,
     );
+  }
+}
+
+class FoodTile extends StatelessWidget {
+  final FoodMarker foodMarker;
+
+  FoodTile({this.foodMarker});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(15, 15, 15, 0),
+      child: Container(
+        height: 100,
+        decoration: BoxDecoration(
+            color: Color(0xff29404E), borderRadius: BorderRadius.circular(8)),
+        child: Row(
+          children: [
+            Expanded(
+              child: Container(
+                padding: EdgeInsets.only(left: 16),
+                width: MediaQuery.of(context).size.width - 100,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      foodMarker.title,
+                      style: TextStyle(color: Colors.white, fontSize: 18),
+                    ),
+                    SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(Icons.location_pin, size: 15),
+                        SizedBox(width: 8),
+                        Text(
+                          foodMarker.address,
+                          style: TextStyle(color: Colors.white, fontSize: 10),
+                        ) // Address
+                      ],
+                    ),
+                    SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.phone,
+                          size: 15,
+                        ),
+                        SizedBox(width: 8),
+                        Text(foodMarker.number,
+                            style:
+                                TextStyle(color: Colors.white, fontSize: 10)),
+                      ],
+                    )
+                  ],
+                ),
+              ),
+            ),
+            ClipRRect(
+              borderRadius: BorderRadius.only(
+                  topRight: Radius.circular(8),
+                  bottomRight: Radius.circular(8)),
+              child: Image.network(
+                foodMarker.imageSource,
+                height: 100,
+                width: 170,
+                fit: BoxFit.cover,
+              ),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class FoodBottomSheet extends StatelessWidget {
+  final FoodMarker food;
+
+  FoodBottomSheet({this.food});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+        color: Color(0xff29404E),
+        child: Column(
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(0, 10, 0, 0),
+              child: Text(
+                food.title,
+                style: TextStyle(
+                    letterSpacing: 5.0,
+                    fontSize: 25.0,
+                    color: Colors.yellow[700]),
+              ),
+            ),
+            SizedBox(height: 15),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.network(
+                food.imageSource,
+                width: MediaQuery.of(context).size.width - 30,
+                fit: BoxFit.fill,
+              ),
+            ),
+            SizedBox(height: 15),
+            Padding(
+              padding: EdgeInsets.only(left: 15),
+              child: Row(children: [
+                Icon(
+                  Icons.location_pin,
+                  size: 20,
+                  color: Colors.yellow[700],
+                ),
+                SizedBox(width: 8),
+                Text(
+                  food.address,
+                  style: TextStyle(fontSize: 20),
+                ),
+              ]),
+            ),
+            SizedBox(
+              height: 15,
+            ),
+            Padding(
+              padding: EdgeInsets.only(left: 15),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.phone,
+                    size: 20,
+                    color: Colors.yellow[700],
+                  ),
+                  SizedBox(
+                    width: 8,
+                  ),
+                  Text(food.number, style: TextStyle(fontSize: 20))
+                ],
+              ),
+            ),
+          ],
+        ));
   }
 }
