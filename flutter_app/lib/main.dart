@@ -1,13 +1,22 @@
 import 'dart:collection';
-import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_app/foodMarker.dart';
+import 'package:flutter_app/models/foodMarker.dart';
+import 'package:flutter_app/screens/addPlaceScreen.dart';
+import 'package:flutter_app/screens/foodBottomSheet.dart';
+import 'package:flutter_app/screens/foodTile.dart';
+import 'package:flutter_app/screens/radiusBottomSheet.dart';
 import 'package:hexcolor/hexcolor.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:location/location.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:flutter/src/widgets/navigator.dart';
+
+import 'net/generalMethods.dart';
+import 'net/jsonMethods.dart';
 
 void main() {
   runApp(MyApp());
@@ -19,10 +28,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        brightness: Brightness.dark,
-      ),
+      theme: ThemeData(brightness: Brightness.dark),
       home: Home(),
     );
   }
@@ -34,40 +40,41 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  bool _isDay() {
-    var hour = DateTime.now().hour;
-
-    if (hour >= 18 || hour <= 8) {
-      return false;
-    }
-
-    return true;
-  }
-
   int _currentIndex = 0;
+
+  bool loading = true;
 
   void _onTappedItem(int index) {
     setState(() {
+      //MapsLoad().then(_currentIndex = index)
       _currentIndex = index;
+
+      _checkIcon();
     });
   }
 
-  // Global key for main widget
-  final _mainKey = GlobalKey();
-
-  bool isActive = false;
+  void _checkIcon() {
+    if (customIcon.icon != Icons.search) {
+      customIcon = Icon(
+        Icons.search,
+        size: 30,
+        color: Colors.grey,
+      );
+      customSearchBar = Text(
+        'Skanaus!',
+        style: TextStyle(
+          fontFamily: 'Roboto Regular',
+          fontSize: 20,
+          letterSpacing: 6.0,
+          color: Colors.white,
+          //fontFamily: 'Roboto',
+        ),
+      );
+    }
+  }
 
   LatLng _currentLocation = LatLng(55.7033, 21.1443);
-
-  void _centerUserLocation() async {
-    var location = await Location().getLocation();
-
-    setState(() {
-      _currentLocation = LatLng(location.latitude, location.longitude);
-    });
-    _mapController.animateCamera(CameraUpdate.newCameraPosition(
-        CameraPosition(target: _currentLocation, zoom: 15)));
-  }
+  //LatLng _klaipedaLocation = LatLng(55.7033, 21.1443);
 
   void _centerKlaipedaLocation() {
     setState(() {
@@ -80,100 +87,156 @@ class _HomeState extends State<Home> {
 
   Icon customIcon = Icon(
     Icons.search,
+    color: Colors.grey,
     size: 30,
   );
 
-  // Title of the app bar
-  String _appTitle = "SKANAUS!";
+  List<FoodMarker> _newFoodList = [];
 
-  TextEditingController _textController = new TextEditingController();
-
-  textListener() {
-    print(_textController);
+  void _searchForTiles(String input) {
+    if (_currentIndex == 0 && _foodList.length != 0) {
+      setState(() {
+        _newFoodList = _foodList
+            .where((food) =>
+                food.title.toLowerCase().contains(input.toLowerCase()) ||
+                food.address.toLowerCase().contains(input.toLowerCase()))
+            .toList();
+      });
+    }
   }
 
   Widget customSearchBar = Text(
-    'example',
+    'Skanaus!',
     style: TextStyle(
-      fontSize: 15,
-      letterSpacing: 8.0,
-      color: Colors.yellow[700],
-      //fontFamily: 'Roboto',
+      fontFamily: 'Roboto Regular',
+      fontSize: 20,
+      letterSpacing: 6.0,
+      color: Colors.white,
     ),
   );
 
   void _showSearchBar(int index) {
-    if (customIcon.icon == Icons.search) {
-      setState(() {
-        customIcon = Icon(Icons.cancel);
+    _newFoodList = _foodList;
 
-        customSearchBar = TextField(
-            controller: _textController,
-            textInputAction: TextInputAction.go,
-            decoration: InputDecoration(
-                border: InputBorder.none, hintText: 'Ieškoti vietų'),
-            style: TextStyle(color: Colors.white, fontSize: 16));
-      });
+    if (index == 0) {
+      if (customIcon.icon == Icons.search) {
+        setState(() {
+          customIcon = Icon(
+            Icons.cancel,
+            size: 26,
+            color: Colors.grey,
+          );
+
+          customSearchBar = TextField(
+              onChanged: (text) => _searchForTiles(text),
+              textInputAction: TextInputAction.go,
+              decoration: InputDecoration(
+                  border: InputBorder.none, hintText: 'Ieškoti vietų'),
+              style: TextStyle(color: Colors.white, fontSize: 16));
+        });
+      } else {
+        setState(() {
+          customIcon = Icon(
+            Icons.search,
+            size: 30,
+            color: Colors.grey,
+          );
+          customSearchBar = Text(
+            'Skanaus!',
+            style: TextStyle(
+              fontFamily: 'Roboto Regular',
+              fontSize: 20,
+              letterSpacing: 6.0,
+              color: Colors.white,
+              //fontFamily: 'Roboto',
+            ),
+          );
+        });
+      }
     } else {
-      setState(() {
-        customIcon = Icon(Icons.search);
-        customSearchBar = Text(
-          _appTitle,
-          style: TextStyle(
-            fontSize: 15,
-            letterSpacing: 8.0,
-            color: Colors.yellow[700],
-            //fontFamily: 'Roboto',
-          ),
-        );
-      });
+      _showSheetRadius();
     }
+  }
+
+  double _getDistance(String latLng) {
+    var coordinates = latLng.split(',');
+
+    double distance = Geolocator.distanceBetween(
+      _currentLocation.latitude,
+      _currentLocation.longitude,
+      double.parse(coordinates[0]),
+      double.parse(coordinates[1]),
+    );
+
+    return distance;
   }
 
   // This function is called once, when app is loaded.
   void initState() {
     super.initState();
-    _textController.addListener(textListener());
-    //_getNearbyPlaces();
-    _getFoodLength();
-    _setMarkerIcon();
+    getLocationPermission();
+    _getFood();
+    _setRedMarker();
   }
 
-  int _listCount = 0;
+  void _navigateToSelectedPin(String latLng) async {
+    try {
+      _checkIcon();
+
+      var coordinates = latLng.split(',');
+
+      setState(() {
+        _currentIndex = 1;
+        _currentLocation =
+            LatLng(double.parse(coordinates[0]), double.parse(coordinates[1]));
+      });
+
+      await _mapController.animateCamera(CameraUpdate.newCameraPosition(
+          CameraPosition(target: _currentLocation, zoom: 3)));
+    } on Exception catch (_) {
+      _navigateToSelectedPin(latLng);
+    }
+  }
+
+  final _mainKey = GlobalKey();
+
   List<FoodMarker> _foodList = [];
   // App
   @override
   Widget build(BuildContext context) {
     final List<Widget> _widgetOptions = <Widget>[
       ListView.builder(
-        itemCount: _listCount,
+        itemCount: _newFoodList.length,
         itemBuilder: (context, index) {
-          var value = _foodList[index];
+          var value = _newFoodList[index];
           return FoodTile(
-            foodMarker: value,
-          ); //FoodTile(foodMarker: _foodList[index]);
+              foodMarker: value, navigateToPin: _navigateToSelectedPin);
         },
       ),
       _maps(),
-      Container(
-        color: Colors.yellow,
-      )
     ];
 
     return Scaffold(
       key: _mainKey,
       appBar: _currentIndex == 1
           ? AppBar(
-              leading: IconButton(
-                  icon: Icon(
-                    Icons.adjust_outlined,
-                    size: 30,
-                  ),
-                  onPressed: () => _centerUserLocation()),
               centerTitle: true,
+              leading: IconButton(
+                icon: Icon(
+                  Icons.add,
+                  size: 30,
+                  color: Colors.grey,
+                ),
+                onPressed: () => Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => AddPlace())),
+              ),
               actions: [
                 IconButton(
-                  icon: Icon(Icons.location_city, size: 30),
+                  icon: Icon(
+                    Icons.location_city,
+                    size: 30,
+                    color: Colors.grey,
+                  ),
                   onPressed: () => _centerKlaipedaLocation(),
                 ),
                 IconButton(
@@ -209,7 +272,7 @@ class _HomeState extends State<Home> {
         ],
         currentIndex: _currentIndex,
         onTap: _onTappedItem,
-        activeColor: Colors.yellow[700],
+        activeColor: Colors.white,
       ),
     );
   }
@@ -218,16 +281,7 @@ class _HomeState extends State<Home> {
 
   // Sets the style of an app which is in assets folder in json format (editable)
   void _toggleMapStyle() async {
-    String day = 'map_style_day.json';
-    String night = 'map_style_night.json';
-
-    var time = "";
-
-    if (_isDay()) {
-      time = day;
-    } else {
-      time = night;
-    }
+    String time = isDay();
 
     String style = await DefaultAssetBundle.of(context)
         .loadString('assets/map_styles/$time');
@@ -238,17 +292,20 @@ class _HomeState extends State<Home> {
   // Creates marker icon (uploads from the assets folder)
   BitmapDescriptor _markerIcon;
 
-  void _setMarkerIcon() async {
+  Future _setRedMarker() async {
     _markerIcon = await BitmapDescriptor.fromAssetImage(
         ImageConfiguration(), 'assets/markers/map.png');
+  }
+
+  Future _setGreenMarker() async {
+    _markerIcon = await BitmapDescriptor.fromAssetImage(
+        ImageConfiguration(), 'assets/markers/map_green2.png');
   }
 
   Set<Marker> _markers = HashSet<Marker>();
 
   void _setMarkerData(FoodMarker marker) {
     setState(() {
-      _appTitle = marker.title;
-
       _showSheetData(marker);
     });
   }
@@ -261,212 +318,118 @@ class _HomeState extends State<Home> {
         });
   }
 
-  // Loads json file of places to eat from assets
-  Future<String> _loadJsonFromAsset(String path) async {
-    return await rootBundle.loadString(path);
+  double _distance = 0.0;
+
+  void _showSheetRadius() {
+    showModalBottomSheet(
+        context: context,
+        builder: (BuildContext context) {
+          return RadiusBottomSheet(
+            distance: _distance,
+          );
+        });
   }
 
-  void _getFoodLength() async {
-    String jsonString = await _loadJsonFromAsset('assets/food_data/foods.json');
-    var foodsJson = jsonDecode(jsonString);
-
-    int count = 0;
-
-    for (var food in foodsJson) {
-      FoodMarker foodMarker = FoodMarker.fromJson(food);
-      _foodList.add(foodMarker);
-      count++;
-    }
+  void _getFood() async {
+    List<FoodMarker> foods = await getFoodList();
 
     setState(() {
-      _listCount = count;
+      _foodList = foods;
+      _newFoodList = List.from(_foodList);
     });
   }
 
   // Sets marker for each place
-  void _setMarkers() async {
-    String jsonString = await _loadJsonFromAsset('assets/food_data/foods.json');
-    var foodsJson = jsonDecode(jsonString);
+  void setMarkers(double distance) async {
+    List<FoodMarker> foods = await getFoodList();
 
-    for (var food in foodsJson) {
-      FoodMarker foodMarker = FoodMarker.fromJson(food);
+    if (distance == 0.0) {
+      //await _setRedMarker();
+      for (var food in foods) {
+        var coordinates = food.latLng.split(',');
+        Marker marker = new Marker(
+          markerId: MarkerId(food.id),
+          position: LatLng(
+              double.parse(coordinates[0]), double.parse(coordinates[1])),
+          infoWindow: InfoWindow(title: food.title),
+          icon: _markerIcon,
+          onTap: () => _setMarkerData(food),
+        );
 
-      var coordinates = foodMarker.latLng.split(',');
+        setState(() {
+          _markers.add(marker);
+        });
+      }
+    } else {
+      for (var food in foods) {
+        double distanceBetween = _getDistance(
+            food.latLng); // Distance between _currentLocation and foodPlace
 
-      Marker marker = new Marker(
-        markerId: MarkerId(foodMarker.id),
-        position:
-            LatLng(double.parse(coordinates[0]), double.parse(coordinates[1])),
-        infoWindow: InfoWindow(title: foodMarker.title),
-        icon: _markerIcon,
-        onTap: () => _setMarkerData(foodMarker),
-      );
+        var coordinates = food.latLng.split(',');
+        print(distanceBetween);
+        if (distanceBetween <= distance) {
+          await _setGreenMarker();
+          Marker marker = new Marker(
+            markerId: MarkerId(food.id),
+            position: LatLng(
+                double.parse(coordinates[0]), double.parse(coordinates[1])),
+            infoWindow: InfoWindow(title: food.title),
+            icon: _markerIcon,
+            onTap: () => _setMarkerData(food),
+          );
 
-      _markers.add(marker);
+          setState(() {
+            _markers.add(marker);
+          });
+        } else {
+          await _setRedMarker();
+          Marker marker = new Marker(
+            markerId: MarkerId(food.id),
+            position: LatLng(
+                double.parse(coordinates[0]), double.parse(coordinates[1])),
+            infoWindow: InfoWindow(title: food.title),
+            icon: _markerIcon,
+            onTap: () => _setMarkerData(food),
+          );
+
+          setState(() {
+            _markers.add(marker);
+          });
+        }
+      }
     }
   }
 
   // Recreates map which was set in controller
   void _onMapCreated(GoogleMapController controller) {
     _mapController = controller;
-
     _toggleMapStyle();
-    _setMarkers();
+    setMarkers(0.0);
+    loading = false;
   }
 
   // GoogleMamps exctracted widget
   Widget _maps() {
-    return GoogleMap(
+    return new GoogleMap(
       onMapCreated: _onMapCreated,
       initialCameraPosition: CameraPosition(target: _currentLocation, zoom: 15),
       markers: _markers,
       myLocationEnabled: true,
       myLocationButtonEnabled: true,
-
       //zoomControlsEnabled: false,
     );
   }
 }
 
-class FoodTile extends StatelessWidget {
-  final FoodMarker foodMarker;
+// Vietos pridėjimas
+//TODO Duombazėj laikyti informaciją apie visas maisto vietas
+//TODO Vartotojams ir adminui bus skirtingos programėlės (adminas turi patvirtinti maisto vietą)
+//TODO Kaip tai vyksta? vartotojui pridėjus vietą ji įdedama į kitą (ne pagrindinį) json turinio folderį
+//TODO adminui rodo visas (pending) vietas, jei paspaudi, jog su vieta viskas gerai, ji nukeliama į pagrindinį json folderį
 
-  FoodTile({this.foodMarker});
+//Reitingai
+//TODO Vartotojas žemėlapio bottomSheete gali reitinguoti vietą
+//TODO pareitingavus
 
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(15, 15, 15, 0),
-      child: Container(
-        height: 100,
-        decoration: BoxDecoration(
-            color: Color(0xff29404E), borderRadius: BorderRadius.circular(8)),
-        child: Row(
-          children: [
-            Expanded(
-              child: Container(
-                padding: EdgeInsets.only(left: 16),
-                width: MediaQuery.of(context).size.width - 100,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      foodMarker.title,
-                      style: TextStyle(color: Colors.white, fontSize: 18),
-                    ),
-                    SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Icon(Icons.location_pin, size: 15),
-                        SizedBox(width: 8),
-                        Text(
-                          foodMarker.address,
-                          style: TextStyle(color: Colors.white, fontSize: 10),
-                        ) // Address
-                      ],
-                    ),
-                    SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.phone,
-                          size: 15,
-                        ),
-                        SizedBox(width: 8),
-                        Text(foodMarker.number,
-                            style:
-                                TextStyle(color: Colors.white, fontSize: 10)),
-                      ],
-                    )
-                  ],
-                ),
-              ),
-            ),
-            ClipRRect(
-              borderRadius: BorderRadius.only(
-                  topRight: Radius.circular(8),
-                  bottomRight: Radius.circular(8)),
-              child: Image.network(
-                foodMarker.imageSource,
-                height: 100,
-                width: 170,
-                fit: BoxFit.cover,
-              ),
-            )
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class FoodBottomSheet extends StatelessWidget {
-  final FoodMarker food;
-
-  FoodBottomSheet({this.food});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-        color: Color(0xff29404E),
-        child: Column(
-          children: [
-            Padding(
-              padding: EdgeInsets.fromLTRB(0, 10, 0, 0),
-              child: Text(
-                food.title,
-                style: TextStyle(
-                    letterSpacing: 5.0,
-                    fontSize: 25.0,
-                    color: Colors.yellow[700]),
-              ),
-            ),
-            SizedBox(height: 15),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                food.imageSource,
-                width: MediaQuery.of(context).size.width - 30,
-                fit: BoxFit.fill,
-              ),
-            ),
-            SizedBox(height: 15),
-            Padding(
-              padding: EdgeInsets.only(left: 15),
-              child: Row(children: [
-                Icon(
-                  Icons.location_pin,
-                  size: 20,
-                  color: Colors.yellow[700],
-                ),
-                SizedBox(width: 8),
-                Text(
-                  food.address,
-                  style: TextStyle(fontSize: 20),
-                ),
-              ]),
-            ),
-            SizedBox(
-              height: 15,
-            ),
-            Padding(
-              padding: EdgeInsets.only(left: 15),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.phone,
-                    size: 20,
-                    color: Colors.yellow[700],
-                  ),
-                  SizedBox(
-                    width: 8,
-                  ),
-                  Text(food.number, style: TextStyle(fontSize: 20))
-                ],
-              ),
-            ),
-          ],
-        ));
-  }
-}
+//Loadingas
+//TODO Kol kraunasi žemėlapis jo vietoj loading widgetas (placeholderių widgetus pasižiūrėt)

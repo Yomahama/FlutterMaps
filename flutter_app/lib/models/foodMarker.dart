@@ -5,9 +5,11 @@ class FoodMarker {
   String address;
   String number;
   String imageSource;
+  String rating;
+  String ratingsCount;
 
   FoodMarker(this.id, this.latLng, this.title, this.address, this.number,
-      this.imageSource);
+      this.imageSource, this.rating, this.ratingsCount);
 
   Map<String, dynamic> toJson() {
     return {
@@ -16,7 +18,9 @@ class FoodMarker {
       title: this.title,
       address: this.address,
       number: this.number,
-      imageSource: this.imageSource
+      imageSource: this.imageSource,
+      rating: this.rating,
+      ratingsCount: this.ratingsCount
     };
   }
 
@@ -27,5 +31,7 @@ class FoodMarker {
     address = json['address'];
     number = json['number'];
     imageSource = json['imageSource'];
+    rating = json['rating'];
+    ratingsCount = json['ratingsCount'];
   }
 }

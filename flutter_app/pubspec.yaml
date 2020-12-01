@@ -35,6 +35,7 @@ dev_dependencies:
   firebase: ^7.3.2
   firebase_database: ^4.3.0
   flutter_google_places: ^0.2.6
+  geolocator: ^6.1.6
   google_maps_webservice: ^0.0.18
 
 # For information on the generic Dart part of this file, see the
@@ -67,8 +68,9 @@ flutter:
       fonts:
         #- asset: fonts/Roboto-Regular.ttf
         - asset: fonts/Roboto-Bold.ttf
-
-
-  #
+    - family: Roboto Regular
+      fonts:
+        #- asset: fonts/Roboto-Regular.ttf
+        - asset: fonts/Roboto-Regular.ttf
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages
