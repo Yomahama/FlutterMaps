@@ -21,3 +21,4 @@ Future<List<FoodMarker>> getFoodList() async {
 
   return set.toList();
 }
+
