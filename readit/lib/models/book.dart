@@ -1,20 +1,22 @@
 class Book {
+  int id;
   String title;
   String author;
   String registrationDate;
   String review;
   String pages;
+  String years;
   String description;
   String image;
 
-  Book(String title, String author, String registrationDate, String review,
-      String pages, String description, String image) {
-    this.title = title;
-    this.author = author;
-    this.registrationDate = registrationDate;
-    this.review = review;
-    this.pages = pages;
-    this.description = description;
-    this.image = image;
-  }
+  Book(
+      {this.id,
+      this.title,
+      this.author,
+      this.registrationDate,
+      this.review,
+      this.pages,
+      this.years,
+      this.description,
+      this.image});
 }

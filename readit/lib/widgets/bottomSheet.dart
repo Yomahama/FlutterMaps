@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:readit/models/book.dart';
 
 class CustomBottomSheet extends StatelessWidget {
-  Book book;
-  String spentTime;
+  final Book book;
+  final String spentTime;
 
   CustomBottomSheet(this.book, this.spentTime);
 
@@ -12,7 +12,7 @@ class CustomBottomSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       child: Padding(
-        padding: EdgeInsets.all(15),
+        padding: const EdgeInsets.all(15),
         child: Column(
           children: [
             Text(book.title, style: style),
@@ -23,12 +23,12 @@ class CustomBottomSheet extends StatelessWidget {
                   book.author,
                   style: styleAuthor,
                 )),
-            Divider(thickness: 2.0),
+            const Divider(thickness: 2.0),
             SizedBox(height: sizedBoxHeight),
             Align(
               alignment: Alignment.topLeft,
               child: Text(
-                '${book.description}',
+                book.description,
                 style: descriptionStyle,
               ),
             ),
@@ -38,15 +38,15 @@ class CustomBottomSheet extends StatelessWidget {
     );
   }
 
-  var style = TextStyle(
+  final style = TextStyle(
     fontFamily: 'Roboto',
     fontSize: 21,
     color: Colors.grey[600],
   );
-  var styleAuthor =
-      TextStyle(fontFamily: 'Roboto', fontSize: 18, color: Colors.black);
+  final styleAuthor =
+      const TextStyle(fontFamily: 'Roboto', fontSize: 18, color: Colors.black);
 
-  var descriptionStyle = TextStyle(
+  final descriptionStyle = TextStyle(
       fontFamily: 'Roboto',
       fontSize: 18,
       color: Colors.grey[850],

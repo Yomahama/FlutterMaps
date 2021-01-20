@@ -9,101 +9,117 @@ class DBProvider {
   static final DBProvider db = DBProvider._();
   static Database _database;
 
+  static const _tableName = 'books';
+
+  static const id = '_id';
+  static const title = 'title';
+  static const author = 'author';
+  static const registrationDate = 'registrationDate';
+  static const review = 'review';
+  static const years = 'years';
+  static const pages = 'pages';
+  static const description = 'description';
+  static const image = 'image';
+
   Future<Database> get database async {
     if (_database != null) return _database;
 
-    _database = await initDB();
-    return _database;
+    return initDB();
   }
 
-  initDB() async {
-    return await openDatabase(join(await getDatabasesPath(), 'books.db'),
+  Future<Database> initDB() async {
+    return openDatabase(join(await getDatabasesPath(), 'books3.db'),
         onCreate: (db, version) async {
       await db.execute('''
-        CREATE TABLE books (
-          title TEXT, author TEXT, registrationDate TEXT, review TEXT, pages TEXT, description TEXT, image TEXT
+        CREATE TABLE $_tableName (
+           $id INTEGER PRIMARY KEY,
+           $title TEXT,
+           $author TEXT,
+           $registrationDate TEXT,
+           $review TEXT,
+           $pages TEXT,
+           $years TEXT,
+           $description TEXT,
+           $image TEXT
         )
         ''');
     }, version: 1);
   }
 
-  addBook(Book book) async {
+  Future<Book> addBook(Book book) async {
     final db = await database;
 
-    var res = await db.rawInsert('''
-      INSERT INTO books (
-        title, author, registrationDate, review, pages, description, image
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+    await db.rawInsert('''
+      INSERT INTO $_tableName (
+        $title, $author, $registrationDate, $review, $pages, $years, $description, $image
+      ) VALUES (?, ?, ?, ?, ?,? , ?, ?)
     ''', [
       book.title,
       book.author,
       book.registrationDate,
       book.review,
       book.pages,
+      book.years,
       book.description,
       book.image
     ]);
 
-    return res;
+    return book;
   }
 
   Future<List<Book>> getBooks() async {
-    final db = await database;
+    final Database db = await database;
 
-    final List<Map<String, dynamic>> maps = await db.query("books");
+    final List<Map<String, dynamic>> maps = await db.query(_tableName);
 
     return List.generate(maps.length, (i) {
       return Book(
-        maps[i]['title'],
-        maps[i]['author'],
-        maps[i]['registrationDate'],
-        maps[i]['review'],
-        maps[i]['pages'],
-        maps[i]['description'],
-        maps[i]['image'],
-      );
+          id: int.parse(maps[i][id].toString()),
+          title: maps[i][title].toString(),
+          author: maps[i][author].toString(),
+          registrationDate: maps[i][registrationDate].toString(),
+          review: maps[i][review].toString(),
+          pages: maps[i][pages].toString(),
+          years: maps[i][years].toString(),
+          description: maps[i][description].toString(),
+          image: maps[i][image].toString());
     });
   }
 
   Future<void> removeContents() async {
-    final db = await database;
+    final Database db = await database;
 
-    await db.execute("DELETE FROM books");
+    await db.execute("DELETE FROM $_tableName");
   }
 
-  Future<void> updateBook(Book book, String oldImage) async {
+  Future<Book> updateBook(Book book, int bookId) async {
     final db = await database;
 
     await db.rawUpdate('''
-    UPDATE books
-    SET title = ?, author = ?, registrationDate = ?, review = ?, pages = ?, description = ?, image = ?
-    WHERE image = ?
+    UPDATE $_tableName
+    SET $title = ?, $author = ?, $registrationDate = ?, $review = ?, $pages = ?, $years = ?, $description = ?, $image = ?
+    WHERE $id = ?
     ''', [
       book.title,
       book.author,
       book.registrationDate,
       book.review,
       book.pages,
+      book.years,
       book.description,
       book.image,
-      oldImage
+      bookId
     ]);
+
+    return book;
   }
 
-  Future<void> removeBook(Book book) async {
+  Future<void> removeBook(int bookId) async {
     final db = await database;
 
     await db.rawDelete('''
-    DELETE FROM books 
-    WHERE title = ? AND author = ? AND registrationDate = ? AND review = ? AND pages = ? AND description = ? AND image = ?
-    ''', [
-      book.title,
-      book.author,
-      book.registrationDate,
-      book.review,
-      book.pages,
-      book.description,
-      book.image
-    ]);
+    DELETE FROM $_tableName 
+    WHERE $id = ? 
+    ''', [bookId]);
   }
 }

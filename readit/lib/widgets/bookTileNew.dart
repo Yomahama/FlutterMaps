@@ -1,22 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:readit/models/book.dart';
 import 'package:readit/screens/addScreen.dart';
-import 'package:readit/screens/bottomSheet.dart';
+import 'package:readit/widgets/bottomSheet.dart';
 import 'package:readit/utility.dart';
 
 class BookTileNew extends StatefulWidget {
-  final book;
-  final spentTime;
+  final Book book;
+  final String spentTime;
 
-  BookTileNew(this.book, this.spentTime);
+  const BookTileNew(this.book, this.spentTime);
 
   @override
   _BookTileNewState createState() => _BookTileNewState();
 }
 
 class _BookTileNewState extends State<BookTileNew> {
-  bool loading = true;
-
   String subString(String title) {
     if (title.length > 25) return title.substring(0, 18) + '...';
 
@@ -53,7 +51,8 @@ class _BookTileNewState extends State<BookTileNew> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12.0),
                   child: widget.book.image.length != 0
-                      ? Utility.imageFromBase64String1(widget.book.image)
+                      ? Utility.imageFromBase64String1(
+                          widget.book.image, context)
                       : Container(
                           child: Center(
                             child: Icon(

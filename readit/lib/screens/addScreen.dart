@@ -1,79 +1,126 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:readit/database.dart';
+import 'package:readit/bloc/book_bloc.dart';
+import 'package:readit/events/book_event.dart';
 import 'package:readit/models/book.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:flushbar/flushbar.dart' as flush;
 import 'package:readit/utility.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:hexcolor/hexcolor.dart';
+import 'package:readit/widgets/datetime_picker_button.dart';
+import 'package:reviews_slider/reviews_slider.dart';
 
 class AddBookScreen extends StatefulWidget {
-  final book;
+  final Book book;
 
-  AddBookScreen(this.book);
+  const AddBookScreen(this.book);
 
   @override
   _AddBookScreenState createState() => _AddBookScreenState();
 }
 
 class _AddBookScreenState extends State<AddBookScreen> {
-  String _title = '';
-  String _author = '';
-  DateTime _dateTime = DateTime.now();
-  double _review = 1;
-  String _pages = '0'; //int
-  String _description = '';
-  String _imageUrl = '';
+  final Book _current = Book(
+    id: null,
+    title: '',
+    author: '',
+    registrationDate: DateFormat('yyyy-MM-dd').format(DateTime.now()),
+    review: '2',
+    pages: '',
+    years: '',
+    description: '',
+    image: '',
+  );
 
-  final GlobalKey<FormState> _formKey1 = GlobalKey<FormState>();
-  final GlobalKey<FormState> _formKey2 = GlobalKey<FormState>();
-  final GlobalKey<FormState> _formKey3 = GlobalKey<FormState>();
+  bool _titleIsEntered = false;
+  bool _authorIsEntered = false;
+  bool _pagesIsEntered = false;
+  bool _yearsIsEntered = false;
+  bool _descriptionIsEntered = false;
 
-  _pickImage() {
-    ImagePicker.pickImage(source: ImageSource.camera).then((imgFile) {
-      String imgString = Utility.base64String(imgFile.readAsBytesSync());
-
-      setState(() {
-        _imageUrl = imgString;
-      });
-    });
+  @override
+  void initState() {
+    super.initState();
+    _initializeController();
   }
 
   @override
   void dispose() {
-    //You can save your page here
+    _controllerTitle.dispose();
+    _controllerAuthor.dispose();
+    _controllerPages.dispose();
+    _controllerYears.dispose();
+    _controllerDescription.dispose();
     super.dispose();
+  }
+
+  final GlobalKey<FormState> _formKey1 = GlobalKey<FormState>();
+  final GlobalKey<FormState> _formKey2 = GlobalKey<FormState>();
+  final GlobalKey<FormState> _formKey3 = GlobalKey<FormState>();
+  final GlobalKey<FormState> _formKey4 = GlobalKey<FormState>();
+  final GlobalKey<FormState> _formKey5 = GlobalKey<FormState>();
+
+  TextEditingController _controllerTitle = TextEditingController();
+  TextEditingController _controllerAuthor = TextEditingController();
+  TextEditingController _controllerPages = TextEditingController();
+  TextEditingController _controllerYears = TextEditingController();
+  TextEditingController _controllerDescription = TextEditingController();
+
+  void _initializeController() {
+    if (widget.book != null) {
+      _controllerTitle = TextEditingController(text: widget.book.title);
+      _controllerAuthor = TextEditingController(text: widget.book.author);
+      _controllerPages = TextEditingController(text: widget.book.pages);
+      _controllerYears = TextEditingController(text: widget.book.years);
+      _controllerDescription =
+          TextEditingController(text: widget.book.description);
+      _titleIsEntered = true;
+      _authorIsEntered = true;
+      _pagesIsEntered = true;
+      _yearsIsEntered = true;
+
+      if (widget.book.description.isNotEmpty) {
+        _descriptionIsEntered = true;
+      }
+    }
+  }
+
+  void _pickImage() {
+    ImagePicker.pickImage(source: ImageSource.camera).then((imgFile) {
+      final String imgString = Utility.base64String(imgFile.readAsBytesSync());
+
+      setState(() => _current.image = imgString);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: HexColor('#F8F9F3'),
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         actions: [
           widget.book != null
               ? IconButton(
-                  icon: Icon(
+                  icon: const Icon(
                     Icons.delete,
                     size: 30,
                     color: Colors.grey,
                   ),
-                  onPressed: () {
-                    Navigator.pop(context, _removeBook());
-                  })
-              : Icon(
-                  Icons.info,
-                  color: Colors.white,
-                )
+                  onPressed: () => Navigator.pop(context, _removeBook()))
+              : const Icon(null)
         ],
         toolbarHeight: 50,
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.grey[200],
         title: Text(
           widget.book == null ? 'Add book' : 'Update book',
           style: styleTitle,
         ),
         leading: IconButton(
-          icon: Icon(
+          icon: const Icon(
             Icons.arrow_back_ios,
             color: Colors.grey,
             size: 30,
@@ -83,224 +130,88 @@ class _AddBookScreenState extends State<AddBookScreen> {
       ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: EdgeInsets.all(20),
-          child: Container(
-            child: Column(
-              children: [
-                Form(
-                  key: _formKey1,
-                  child: TextFormField(
-                    maxLength: 70,
-                    decoration: decorationMinimal.copyWith(hintText: 'Title'),
-                    initialValue:
-                        widget.book != null ? widget.book.title : _title,
-                    onChanged: (value) {
-                      setState(() {
-                        _title = value;
-                      });
-                    },
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(
-                          RegExp(r'[A-Za-ząėęįųūčšžĄĖĘĮŲŪČŠŽ0-9\s.,;:"]')),
-                    ],
-                    validator: (value) {
-                      if (value.isEmpty) {
-                        return 'Field can\'t be empty';
-                      }
-                      return null;
-                    },
-                  ),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              titleForm(),
+              const SizedBox(height: 15),
+              authorForm(),
+              const SizedBox(height: 15),
+              Row(
+                children: [
+                  pagesForm(),
+                  const SizedBox(width: 15),
+                  yearForm(),
+                ],
+              ),
+              const SizedBox(height: 15),
+              descriptionForm(),
+              const SizedBox(height: 10),
+              DatetimePickerButton(
+                onDateChanged: (date) {
+                  setState(() => _current.registrationDate = date);
+                },
+              ),
+              const SizedBox(height: 15),
+              Row(children: [
+                Text(
+                  'How enjoyable was the book?',
+                  style: styleFields,
                 ),
-                SizedBox(height: 20),
-                Form(
-                  key: _formKey2,
-                  child: TextFormField(
-                    maxLength: 35,
-                    decoration: decorationMinimal.copyWith(hintText: 'Author'),
-                    initialValue:
-                        widget.book != null ? widget.book.author : _author,
-                    onChanged: (value) {
-                      setState(() {
-                        _author = value;
-                      });
-                    },
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(
-                          RegExp(r'[A-Za-ząėęįųūčšžĄĖĘĮŲŪČŠŽ\s]')),
-                    ],
-                    validator: (value) {
-                      if (value.isEmpty) {
-                        return 'Field can\'t be empty';
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-                SizedBox(height: 20),
-                Form(
-                  key: _formKey3,
-                  child: TextFormField(
-                    maxLength: 3,
-                    decoration: decorationMinimal.copyWith(hintText: 'Pages'),
-                    initialValue: widget.book == null ? '' : widget.book.pages,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
-                    ],
-                    onChanged: (value) {
-                      setState(() {
-                        _pages = value;
-                      });
-                    },
-                    validator: (value) {
-                      if (value.isEmpty || int.parse(value) < 1) {
-                        return 'Field can\'t be empty or less than 1';
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-                SizedBox(height: 20),
-                Form(
-                  child: TextFormField(
-                    maxLines: 4,
-                    maxLength: 500,
-                    initialValue: widget.book != null
-                        ? widget.book.description
-                        : _description,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(
-                          RegExp(r'[A-Za-ząėęįųūčšžĄĖĘĮŲŪČŠŽ0-9\s.,:?!%"]')),
-                    ],
-                    decoration:
-                        decorationMinimal.copyWith(hintText: 'Description'),
-                    onChanged: (value) {
-                      _description = value;
-                    },
-                  ),
-                ),
-                SizedBox(height: 20),
-                Row(
-                  children: [
-                    Text('Book read date: ', style: styleFields),
-                  ],
-                ),
-                SizedBox(
-                  height: 30,
-                  child: CupertinoDatePicker(
-                      initialDateTime: widget.book == null
-                          ? _dateTime
-                          : DateTime.parse(widget.book.registrationDate),
-                      minimumYear: DateTime.now().year - 1,
-                      maximumYear: DateTime.now().year,
-                      mode: CupertinoDatePickerMode.date,
-                      onDateTimeChanged: (dateTime) {
-                        setState(() {
-                          _dateTime = dateTime;
-                        });
-                      }),
-                ),
-                SizedBox(height: 20),
-                Row(children: [
-                  Text(
-                    'Review (1 - 10):',
-                    style: styleFields,
-                  ),
-                ]),
-                Row(
-                  children: [
-                    Container(
-                      width: MediaQuery.of(context).size.width - 40,
-                      child: SliderTheme(
-                        data: SliderTheme.of(context).copyWith(
-                          activeTrackColor: Colors.grey[500],
-                          inactiveTrackColor: Colors.grey[300],
-                          trackShape: RoundedRectSliderTrackShape(),
-                          trackHeight: 15.0,
-                          thumbShape:
-                              RoundSliderThumbShape(enabledThumbRadius: 12.0),
-                          thumbColor: Colors.brown,
-                          overlayColor: Colors.red.withAlpha(32),
-                          overlayShape:
-                              RoundSliderOverlayShape(overlayRadius: 28.0),
-                          tickMarkShape: RoundSliderTickMarkShape(),
-                          activeTickMarkColor: Colors.grey[500],
-                          inactiveTickMarkColor: Colors.grey[300],
-                          valueIndicatorShape:
-                              PaddleSliderValueIndicatorShape(),
-                          valueIndicatorColor: Colors.brown,
-                          valueIndicatorTextStyle: TextStyle(
-                            color: Colors.white,
-                          ),
-                        ),
-                        child: Slider(
-                          value: widget.book != null
-                              ? double.parse(widget.book.review)
-                              : _review,
-                          min: 1,
-                          max: 10,
-                          divisions: 9,
-                          label: '${_review.toInt()}',
-                          onChanged: (value) {
-                            setState(
-                              () {
-                                _review = value;
-                              },
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 20),
-                Row(
-                  children: [
-                    widget.book == null || widget.book.image.length == 0
-                        ? _imageUrl.length != 0
-                            ? ClipRRect(
-                                borderRadius: BorderRadius.circular(12.0),
-                                child:
-                                    Utility.imageFromBase64String2(_imageUrl))
-                            : ClipRRect(
-                                child: Container(
-                                  height: 150,
-                                  width: 130,
-                                  child: Icon(
-                                    Icons.add_a_photo_outlined,
-                                    size: 50,
-                                    color: Colors.white,
-                                  ),
-                                  decoration: BoxDecoration(
-                                      color: Colors.grey[300],
-                                      borderRadius: BorderRadius.circular(30)),
+              ]),
+              const SizedBox(height: 10),
+              ReviewSlider(
+                onChange: (int val) => _current.review = val.toString(),
+                initialValue: int.parse(_current.review),
+              ),
+              //const SizedBox(height: 15),
+              Row(
+                children: [
+                  widget.book == null || widget.book.image.isEmpty
+                      ? _current.image.isNotEmpty
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(12.0),
+                              child: Utility.imageFromBase64String2(
+                                  _current.image))
+                          : ClipRRect(
+                              child: Container(
+                                height: 150,
+                                width: 130,
+                                decoration: BoxDecoration(
+                                    color: Colors.grey[300],
+                                    borderRadius: BorderRadius.circular(30)),
+                                child: const Icon(
+                                  Icons.add_a_photo_outlined,
+                                  size: 50,
+                                  color: Colors.white,
                                 ),
-                              )
-                        : ClipRRect(
-                            borderRadius: BorderRadius.circular(12.0),
-                            child: Utility.imageFromBase64String2(
-                                widget.book.image),
-                          ),
-                  ],
-                ),
-                SizedBox(height: 20),
-                Row(
-                  children: [
-                    FloatingActionButton.extended(
-                      heroTag: "btn2",
-                      onPressed: () => _pickImage(),
-                      backgroundColor: Colors.grey,
-                      icon: Icon(Icons.add_a_photo_outlined),
-                      label: Text(
-                        'Add image',
-                        style: TextStyle(fontFamily: 'Roboto'),
-                      ),
-                      elevation: 0,
+                              ),
+                            )
+                      : ClipRRect(
+                          borderRadius: BorderRadius.circular(12.0),
+                          child:
+                              Utility.imageFromBase64String2(widget.book.image),
+                        ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  FloatingActionButton.extended(
+                    heroTag: "btn2",
+                    onPressed: () => _pickImage(),
+                    backgroundColor: Colors.grey,
+                    icon: const Icon(Icons.add_a_photo_outlined),
+                    label: const Text(
+                      'Add image',
+                      style: TextStyle(fontFamily: 'Roboto'),
                     ),
-                  ],
-                )
-              ],
-            ),
+                    elevation: 0,
+                  ),
+                ],
+              )
+            ],
           ),
         ),
       ),
@@ -308,10 +219,10 @@ class _AddBookScreenState extends State<AddBookScreen> {
         heroTag: "btn1",
         onPressed: () => _saveBook(),
         backgroundColor: Colors.grey,
-        icon: Icon(Icons.save),
+        icon: const Icon(Icons.save),
         label: Text(
           widget.book == null ? 'Save book' : 'Update book',
-          style: TextStyle(fontFamily: 'Roboto'),
+          style: const TextStyle(fontFamily: 'Roboto'),
         ),
         elevation: 0,
       ),
@@ -319,70 +230,306 @@ class _AddBookScreenState extends State<AddBookScreen> {
   }
 
   Future<void> _removeBook() async {
-    await DBProvider.db.removeBook(widget.book);
+    // ignore: await_only_futures
+    await BlocProvider.of<BookBloc>(context).add(DeleteBook(widget.book.id));
 
     flush.Flushbar(
       message: 'Book removed.',
-      duration: Duration(milliseconds: 800),
+      duration: const Duration(seconds: 1),
     ).show(context);
   }
 
   Future<void> _saveBook() async {
     if (_formKey1.currentState.validate() &&
         _formKey2.currentState.validate() &&
-        _formKey3.currentState.validate()) {
-      var formatter = new DateFormat('yyyy-MM-dd');
-      String formattedDate = formatter.format(_dateTime);
+        _formKey3.currentState.validate() &&
+        _formKey4.currentState.validate()) {
+      _formKey1.currentState.save();
+      _formKey2.currentState.save();
+      _formKey3.currentState.save();
+      _formKey4.currentState.save();
 
-      Book book = new Book(
-        _title == '' && widget.book != null ? widget.book.title : _title,
-        _author == '' && widget.book != null ? widget.book.author : _author,
-        formattedDate == formatter.format(DateTime.now()) && widget.book != null
-            ? widget.book.registrationDate
-            : formattedDate,
-        _review.toInt().toString() == '1' && widget.book != null
-            ? widget.book.review
-            : _review.toInt().toString(),
-        _pages.toString() == '0' && widget.book != null
-            ? widget.book.pages
-            : _pages.toString(),
-        _description == '' && widget.book != null
-            ? widget.book.description
-            : _description,
-        _imageUrl == '' && widget.book != null ? widget.book.image : _imageUrl,
-      );
+      //final String formattedDate = DateFormat('yyyy-MM-dd').format(_dateTime);
 
       if (widget.book != null) {
         Navigator.pop(
-            context, DBProvider.db.updateBook(book, widget.book.image));
+            context,
+            BlocProvider.of<BookBloc>(context)
+                .add(UpdateBook(_current, widget.book.id)));
       } else {
-        Navigator.pop(context, DBProvider.db.addBook(book));
+        Navigator.pop(
+            context, BlocProvider.of<BookBloc>(context).add(AddBook(_current)));
       }
 
       flush.Flushbar(
         message: widget.book == null ? 'Book added.' : 'Book updated.',
-        duration: Duration(milliseconds: 800),
+        duration: const Duration(seconds: 1),
       ).show(context);
     }
   }
 
-  var styleTitle = TextStyle(
+  Widget buildIcon(bool textIsEntered) {
+    if (textIsEntered) {
+      return const Icon(Icons.clear);
+    } else {
+      return const Icon(null);
+    }
+  }
+
+  Widget titleForm() {
+    return Form(
+      key: _formKey1,
+      child: TextFormField(
+        controller: _controllerTitle,
+        textInputAction: TextInputAction.next,
+        maxLength: 70,
+        decoration: textInputDecoration.copyWith(
+            suffixIcon: IconButton(
+              icon: buildIcon(_titleIsEntered),
+              onPressed: () {
+                _controllerTitle.clear();
+                setState(() => _titleIsEntered = false);
+              },
+            ),
+            hintText: 'Title',
+            counterText: ''),
+        onChanged: (_) {
+          setState(() {
+            _checkTitleController();
+          });
+        },
+        onSaved: (val) => _current.title = val,
+        inputFormatters: [
+          FilteringTextInputFormatter.allow(
+              RegExp(r'[A-Za-ząėęįųūčšžĄĖĘĮŲŪČŠŽ0-9\s.,;:"]')),
+        ],
+        validator: (value) {
+          if (value.isEmpty) {
+            return "Field can't be empty";
+          }
+          return null;
+        },
+      ),
+    );
+  }
+
+  void _checkTitleController() {
+    if (_controllerTitle.text.isNotEmpty) {
+      _titleIsEntered = true;
+    } else {
+      _titleIsEntered = false;
+    }
+  }
+
+  Widget authorForm() {
+    return Form(
+      key: _formKey2,
+      child: TextFormField(
+        controller: _controllerAuthor,
+        textInputAction: TextInputAction.next,
+        maxLength: 35,
+        decoration: textInputDecoration.copyWith(
+          hintText: 'Author',
+          counterText: '',
+          suffixIcon: IconButton(
+            onPressed: () {
+              _controllerAuthor.clear();
+              setState(() => _authorIsEntered = false);
+            },
+            icon: buildIcon(_authorIsEntered),
+          ),
+        ),
+        onChanged: (_) {
+          setState(() {
+            _checkAuthorController();
+          });
+        },
+        onSaved: (val) => _current.author = val,
+        inputFormatters: [
+          FilteringTextInputFormatter.allow(
+              RegExp(r'[A-Za-ząėęįųūčšžĄĖĘĮŲŪČŠŽ\s]')),
+        ],
+        validator: (value) {
+          if (value.isEmpty) {
+            return "Field can't be empty";
+          }
+          return null;
+        },
+      ),
+    );
+  }
+
+  void _checkAuthorController() {
+    if (_controllerAuthor.text.isNotEmpty) {
+      _authorIsEntered = true;
+    } else {
+      _authorIsEntered = false;
+    }
+  }
+
+  Widget pagesForm() {
+    return Flexible(
+      child: Form(
+        key: _formKey3,
+        child: TextFormField(
+          controller: _controllerPages,
+          textInputAction: TextInputAction.next,
+          maxLength: 5,
+          decoration: textInputDecoration.copyWith(
+            hintText: 'Pages',
+            counterText: '',
+            suffixIcon: IconButton(
+              onPressed: () {
+                _controllerPages.clear();
+                setState(() => _pagesIsEntered = false);
+              },
+              icon: buildIcon(_pagesIsEntered),
+            ),
+          ),
+          keyboardType: TextInputType.number,
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp("[0-9]")),
+          ],
+          onChanged: (_) {
+            setState(() {
+              _checkPagesController();
+            });
+          },
+          onSaved: (val) => _current.pages = val,
+          validator: (value) {
+            if (value.isEmpty || int.parse(value) < 1) {
+              return "Field can't be empty or less than 1";
+            }
+            return null;
+          },
+        ),
+      ),
+    );
+  }
+
+  void _checkPagesController() {
+    if (_controllerPages.text.isNotEmpty) {
+      _pagesIsEntered = true;
+    } else {
+      _pagesIsEntered = false;
+    }
+  }
+
+  Widget yearForm() {
+    return Flexible(
+      child: Form(
+        key: _formKey4,
+        child: TextFormField(
+          controller: _controllerYears,
+          textInputAction: TextInputAction.next,
+          maxLength: 4,
+          decoration: textInputDecoration.copyWith(
+            hintText: 'Year',
+            counterText: '',
+            suffixIcon: IconButton(
+              onPressed: () {
+                _controllerYears.clear();
+                setState(() => _yearsIsEntered = false);
+              },
+              icon: buildIcon(_yearsIsEntered),
+            ),
+          ),
+          keyboardType: TextInputType.number,
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp('[0-9]')),
+          ],
+          onChanged: (_) {
+            setState(() {
+              _checkYearController();
+            });
+          },
+          onSaved: (val) => _current.years = val,
+          validator: (value) {
+            if (value.isEmpty || int.parse(value) > DateTime.now().year) {
+              return "Field can't be empty or incorrect.";
+            }
+            return null;
+          },
+        ),
+      ),
+    );
+  }
+
+  void _checkYearController() {
+    if (_controllerYears.text.isNotEmpty) {
+      _yearsIsEntered = true;
+    } else {
+      _yearsIsEntered = false;
+    }
+  }
+
+  Widget descriptionForm() {
+    return Form(
+      child: TextFormField(
+        controller: _controllerDescription,
+        textInputAction: TextInputAction.done,
+        maxLines: 4,
+        maxLength: 500,
+        onChanged: (_) {
+          setState(() {
+            _checkDescriptionForm();
+          });
+        },
+        inputFormatters: [
+          FilteringTextInputFormatter.allow(
+              RegExp(r'[A-Za-ząėęįųūčšžĄĖĘĮŲŪČŠŽ0-9\s.,:?!%"]')),
+        ],
+        decoration: textInputDecoration.copyWith(
+            suffixIcon: IconButton(
+              onPressed: () {
+                _controllerDescription.clear();
+                setState(() => _descriptionIsEntered = false);
+              },
+              icon: buildIcon(_descriptionIsEntered),
+            ),
+            hintText: 'Description',
+            contentPadding: const EdgeInsets.fromLTRB(10, 20, 0, 0)),
+        onSaved: (val) => _current.description = val,
+      ),
+    );
+  }
+
+  void _checkDescriptionForm() {
+    if (_controllerDescription.text.isNotEmpty) {
+      _descriptionIsEntered = true;
+    } else {
+      _descriptionIsEntered = false;
+    }
+  }
+
+  TextStyle styleTitle = const TextStyle(
     fontFamily: 'Roboto',
     fontSize: 20,
     letterSpacing: 2.0,
     color: Colors.grey,
   );
 
-  var styleFields = TextStyle(
+  TextStyle styleFields = const TextStyle(
     fontFamily: 'Roboto',
     fontSize: 15,
     color: Colors.grey,
   );
 
-  var decorationMinimal = InputDecoration(
-    hintStyle: new TextStyle(color: Colors.grey, fontFamily: 'Roboto'),
+  InputDecoration decorationMinimal = const InputDecoration(
+    hintStyle: TextStyle(color: Colors.grey, fontFamily: 'Roboto'),
     focusedBorder: UnderlineInputBorder(
       borderSide: BorderSide(color: Colors.brown, width: 2.5),
+    ),
+  );
+
+  InputDecoration textInputDecoration = InputDecoration(
+    hintStyle:
+        const TextStyle(color: Colors.grey, fontFamily: 'Roboto', fontSize: 15),
+    filled: true,
+    contentPadding: const EdgeInsets.only(left: 10),
+    border: OutlineInputBorder(
+      borderSide: BorderSide.none,
+      borderRadius: BorderRadius.circular(20),
     ),
   );
 }
