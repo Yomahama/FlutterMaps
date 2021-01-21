@@ -88,7 +88,15 @@ class _AddBookScreenState extends State<AddBookScreen> {
     }
   }
 
-  void _pickImage() {
+  void _pickImageFromCamera() {
+    ImagePicker.pickImage(source: ImageSource.camera).then((imgFile) {
+      final String imgString = Utility.base64String(imgFile.readAsBytesSync());
+
+      setState(() => _current.image = imgString);
+    });
+  }
+
+  void _pickImageFromGallery() {
     ImagePicker.pickImage(source: ImageSource.camera).then((imgFile) {
       final String imgString = Utility.base64String(imgFile.readAsBytesSync());
 
@@ -200,7 +208,7 @@ class _AddBookScreenState extends State<AddBookScreen> {
                 children: [
                   FloatingActionButton.extended(
                     heroTag: "btn2",
-                    onPressed: () => _pickImage(),
+                    onPressed: () => _pickImageFromCamera(),
                     backgroundColor: Colors.grey,
                     icon: const Icon(Icons.add_a_photo_outlined),
                     label: const Text(

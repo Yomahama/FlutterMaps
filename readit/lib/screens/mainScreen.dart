@@ -30,23 +30,8 @@ class _MainScreenState extends State<MainScreen> {
     super.initState();
     //DBProvider.db.removeContents();
     _getBooks();
-    // initializeBooks();
     _controller.addListener(() => _searchForTiles());
   }
-
-  // Widget titleText = RichText(
-  //   text: TextSpan(
-  //     recognizer: TapGestureRecognizer()..onTap = () =>
-  //     text: 'Cancel',
-  //     style: TextStyle(
-  //       fontFamily: 'Roboto',
-  //       fontSize: 20,
-  //       fontWeight: FontWeight.w500,
-  //       color: Colors.blue,
-  //       letterSpacing: 2.0,
-  //     ),
-  //   ),
-  // );
 
   @override
   void dispose() {
@@ -60,18 +45,6 @@ class _MainScreenState extends State<MainScreen> {
       appBar: AppBar(
         backgroundColor: HexColor('#F5F3EC'),
         title: _searchButtonPressed ? rowWithCancel() : rowWithoutCancel(),
-        // actions: [
-        //   IconButton(
-        //     icon: Icon(
-        //       Icons.info_outline,
-        //       color: Colors.grey[500],
-        //       size: 28,
-        //     ),
-        //     onPressed: () => _showInfoDialog(),
-        //   ),
-        //   cancelButton(),
-        // ],
-        // elevation: 2,
         toolbarHeight: 50,
       ),
       body: Container(
@@ -82,13 +55,14 @@ class _MainScreenState extends State<MainScreen> {
               if (state is BooksLoading) {
                 return const spins.SpinKitFadingCircle(
                     color: Colors.grey, size: 30.0);
-              } else if (state is BooksLoaded) {
+              } else if (state is BooksLoaded && state.books.isNotEmpty) {
                 return itemList(state.books);
               }
-
               return emptyShelf();
             } else if (_booksForSearch.isNotEmpty) {
               return buildSearchListView();
+            } else if (_booksForSearch.isEmpty && _books.isNotEmpty) {
+              return Container();
             } else {
               return emptyShelf();
             }
@@ -98,6 +72,8 @@ class _MainScreenState extends State<MainScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           Navigator.pushNamed(context, '/add');
+
+          _closeTextField();
         },
         backgroundColor: Colors.grey,
         icon: const Icon(Icons.add),
@@ -186,8 +162,14 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Widget itemList(List<Book> books) {
-    _books.addAll(books);
-    _booksForSearch.addAll(books);
+    // if (_books.isEmpty) {
+    //   _books = List<Book>.from(books);
+    //   _booksForSearch = List<Book>.from(_books);
+    // } else if (_books.length != _booksForSearch.length) {
+    //   _booksForSearch = List<Book>.from(_books);
+    // }
+    _books = List<Book>.from(books);
+    _booksForSearch = List<Book>.from(books);
     return ListView.separated(
       separatorBuilder: (BuildContext context, int index) => divider,
       itemCount: books.length,
@@ -211,19 +193,17 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   void _searchForTiles() {
-    if (_booksForSearch.isNotEmpty) {
-      setState(() {
-        _booksForSearch = _books
-            .where((book) =>
-                book.title
-                    .toLowerCase()
-                    .contains(_controller.text.toLowerCase()) ||
-                book.author
-                    .toLowerCase()
-                    .contains(_controller.text.toLowerCase()))
-            .toList();
-      });
-    }
+    setState(() {
+      _booksForSearch = _books
+          .where((book) =>
+              book.title
+                  .toLowerCase()
+                  .contains(_controller.text.toLowerCase()) ||
+              book.author
+                  .toLowerCase()
+                  .contains(_controller.text.toLowerCase()))
+          .toList();
+    });
   }
 
   Widget textField(double width) {
