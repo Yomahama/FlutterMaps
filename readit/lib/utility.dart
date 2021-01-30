@@ -25,8 +25,8 @@ class Utility {
   static Image imageFromBase64String2(String base64String) {
     return Image.memory(
       base64Decode(base64String),
-      height: 150,
-      width: 130,
+      height: 130,
+      width: 110,
       fit: BoxFit.fitWidth,
     );
   }
@@ -34,8 +34,6 @@ class Utility {
   static Image imageFromBase64String1(
       String base64String, BuildContext context) {
     return Image.memory(base64Decode(base64String),
-        width: 80,
-        height: 100, //MediaQuery.of(context).size.height - 700,
-        fit: BoxFit.fitHeight);
+        width: 80, height: 100, fit: BoxFit.fitHeight);
   }
 }

@@ -12,6 +12,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hexcolor/hexcolor.dart';
 import 'package:readit/widgets/datetime_picker_button.dart';
 import 'package:reviews_slider/reviews_slider.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class AddBookScreen extends StatefulWidget {
   final Book book;
@@ -88,20 +89,66 @@ class _AddBookScreenState extends State<AddBookScreen> {
     }
   }
 
-  void _pickImageFromCamera() {
-    ImagePicker.pickImage(source: ImageSource.camera).then((imgFile) {
-      final String imgString = Utility.base64String(imgFile.readAsBytesSync());
+  // ignore: avoid_void_async
+  void _pickImageFromCamera() async {
+    final cameraPermission = await Permission.camera.status;
 
-      setState(() => _current.image = imgString);
-    });
+    if (cameraPermission.isUndetermined) {
+      await Permission.camera.request();
+
+      if (await Permission.camera.status.isGranted) {
+        ImagePicker.pickImage(source: ImageSource.camera).then((imgFile) {
+          final String imgString =
+              Utility.base64String(imgFile.readAsBytesSync());
+
+          setState(() => _current.image = imgString);
+        });
+      } else {
+        return;
+      }
+    } else if (cameraPermission.isDenied ||
+        cameraPermission.isPermanentlyDenied ||
+        cameraPermission.isRestricted) {
+      return;
+    } else {
+      ImagePicker.pickImage(source: ImageSource.camera).then((imgFile) {
+        final String imgString =
+            Utility.base64String(imgFile.readAsBytesSync());
+
+        setState(() => _current.image = imgString);
+      });
+    }
   }
 
-  void _pickImageFromGallery() {
-    ImagePicker.pickImage(source: ImageSource.camera).then((imgFile) {
-      final String imgString = Utility.base64String(imgFile.readAsBytesSync());
+  // ignore: avoid_void_async
+  void _pickImageFromGallery() async {
+    final galleryPermission = await Permission.storage.status;
 
-      setState(() => _current.image = imgString);
-    });
+    if (galleryPermission.isUndetermined) {
+      await Permission.storage.request();
+
+      if (await Permission.storage.status.isGranted) {
+        ImagePicker.pickImage(source: ImageSource.gallery).then((imgFile) {
+          final String imgString =
+              Utility.base64String(imgFile.readAsBytesSync());
+
+          setState(() => _current.image = imgString);
+        });
+      } else {
+        return;
+      }
+    } else if (galleryPermission.isDenied ||
+        galleryPermission.isPermanentlyDenied ||
+        galleryPermission.isRestricted) {
+      return;
+    } else {
+      ImagePicker.pickImage(source: ImageSource.gallery).then((imgFile) {
+        final String imgString =
+            Utility.base64String(imgFile.readAsBytesSync());
+
+        setState(() => _current.image = imgString);
+      });
+    }
   }
 
   @override
@@ -118,7 +165,11 @@ class _AddBookScreenState extends State<AddBookScreen> {
                     size: 30,
                     color: Colors.grey,
                   ),
-                  onPressed: () => Navigator.pop(context, _removeBook()))
+                  onPressed: () async {
+                    await _areYouSureWantToDelete();
+                    print("Pradeta");
+                    //Navigator.pop(context);
+                  })
               : const Icon(null)
         ],
         toolbarHeight: 50,
@@ -170,8 +221,10 @@ class _AddBookScreenState extends State<AddBookScreen> {
               ]),
               const SizedBox(height: 10),
               ReviewSlider(
-                onChange: (int val) => _current.review = val.toString(),
-                initialValue: int.parse(_current.review),
+                onChange: (int val) => _current.review = (val).toString(),
+                initialValue: widget.book == null
+                    ? int.parse(_current.review)
+                    : int.parse(widget.book.review),
               ),
               //const SizedBox(height: 15),
               Row(
@@ -184,8 +237,8 @@ class _AddBookScreenState extends State<AddBookScreen> {
                                   _current.image))
                           : ClipRRect(
                               child: Container(
-                                height: 150,
-                                width: 130,
+                                height: 130,
+                                width: 110,
                                 decoration: BoxDecoration(
                                     color: Colors.grey[300],
                                     borderRadius: BorderRadius.circular(30)),
@@ -208,7 +261,9 @@ class _AddBookScreenState extends State<AddBookScreen> {
                 children: [
                   FloatingActionButton.extended(
                     heroTag: "btn2",
-                    onPressed: () => _pickImageFromCamera(),
+                    onPressed: () {
+                      _pickImage();
+                    },
                     backgroundColor: Colors.grey,
                     icon: const Icon(Icons.add_a_photo_outlined),
                     label: const Text(
@@ -237,6 +292,68 @@ class _AddBookScreenState extends State<AddBookScreen> {
     );
   }
 
+  void _pickImage() {
+    showModalBottomSheet(
+        context: context,
+        builder: (BuildContext context) {
+          return Wrap(
+            children: [
+              ListTile(
+                  title: const Text("Gallery",
+                      style: TextStyle(fontFamily: 'Roboto')),
+                  trailing: const Icon(Icons.photo),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _pickImageFromGallery();
+                  }),
+              ListTile(
+                  title: const Text("Camera"),
+                  trailing: const Icon(Icons.camera),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _pickImageFromCamera();
+                  }),
+            ],
+          );
+        });
+  }
+
+  void _areYouSureWantToDelete() {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text(
+          "Delete book",
+          style: TextStyle(fontFamily: 'Roboto'),
+        ),
+        content: const Text(
+          "Are you sure to delete book?",
+          style: TextStyle(fontFamily: 'Roboto'),
+        ),
+        actions: [
+          FlatButton(
+            onPressed: () {
+              _removeBook();
+              Navigator.of(context).pushNamedAndRemoveUntil(
+                  "/", (Route<dynamic> route) => false);
+            },
+            child: const Text(
+              "Yes",
+              style: TextStyle(fontFamily: 'Roboto'),
+            ),
+          ),
+          FlatButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              "No",
+              style: TextStyle(fontFamily: 'Roboto'),
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
   Future<void> _removeBook() async {
     // ignore: await_only_futures
     await BlocProvider.of<BookBloc>(context).add(DeleteBook(widget.book.id));
@@ -256,6 +373,7 @@ class _AddBookScreenState extends State<AddBookScreen> {
       _formKey2.currentState.save();
       _formKey3.currentState.save();
       _formKey4.currentState.save();
+      _formKey5.currentState.save();
 
       //final String formattedDate = DateFormat('yyyy-MM-dd').format(_dateTime);
 
@@ -406,7 +524,7 @@ class _AddBookScreenState extends State<AddBookScreen> {
           onSaved: (val) => _current.pages = val,
           validator: (value) {
             if (value.isEmpty || int.parse(value) < 1) {
-              return "Field can't be empty or less than 1";
+              return "Empty or less than 1";
             }
             return null;
           },
@@ -454,7 +572,7 @@ class _AddBookScreenState extends State<AddBookScreen> {
           onSaved: (val) => _current.years = val,
           validator: (value) {
             if (value.isEmpty || int.parse(value) > DateTime.now().year) {
-              return "Field can't be empty or incorrect.";
+              return "Empty or incorrect.";
             }
             return null;
           },
@@ -473,6 +591,7 @@ class _AddBookScreenState extends State<AddBookScreen> {
 
   Widget descriptionForm() {
     return Form(
+      key: _formKey5,
       child: TextFormField(
         controller: _controllerDescription,
         textInputAction: TextInputAction.done,

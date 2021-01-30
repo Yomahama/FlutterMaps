@@ -5,11 +5,7 @@ import 'package:hexcolor/hexcolor.dart';
 typedef StringCallBack = Function(String date);
 
 class DatetimePickerButton extends StatefulWidget {
-  // final String date;
-  //final VoidCallback callback;
-
   final StringCallBack onDateChanged;
-  //final Function(String) selectDate;
 
   const DatetimePickerButton({this.onDateChanged});
 

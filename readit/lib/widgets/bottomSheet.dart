@@ -10,31 +10,35 @@ class CustomBottomSheet extends StatelessWidget {
   final double sizedBoxHeight = 10.0;
   @override
   Widget build(BuildContext context) {
-    return Container(
-      child: Padding(
-        padding: const EdgeInsets.all(15),
-        child: Column(
-          children: [
-            Text(book.title, style: style),
-            SizedBox(height: sizedBoxHeight),
-            Align(
+    return Wrap(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(15),
+          child: Column(
+            children: [
+              Text(book.title, style: style),
+              SizedBox(height: sizedBoxHeight),
+              Align(
+                  alignment: Alignment.topLeft,
+                  child: Text(
+                    book.author,
+                    style: styleAuthor,
+                  )),
+              const Divider(thickness: 2.0),
+              SizedBox(height: sizedBoxHeight),
+              Align(
                 alignment: Alignment.topLeft,
                 child: Text(
-                  book.author,
-                  style: styleAuthor,
-                )),
-            const Divider(thickness: 2.0),
-            SizedBox(height: sizedBoxHeight),
-            Align(
-              alignment: Alignment.topLeft,
-              child: Text(
-                book.description,
-                style: descriptionStyle,
+                  book.description.isEmpty
+                      ? "No description added."
+                      : book.description,
+                  style: descriptionStyle,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
+      ],
     );
   }
 

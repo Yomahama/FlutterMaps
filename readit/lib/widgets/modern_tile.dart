@@ -6,9 +6,11 @@ import 'package:readit/widgets/bottomSheet.dart';
 
 class ModernTile extends StatelessWidget {
   final Book book;
+  final String readTime;
+  final Function toCancelController;
   //F8F9F3
 
-  ModernTile(this.book);
+  ModernTile(this.book, this.toCancelController, this.readTime);
 
   @override
   Widget build(BuildContext context) {
@@ -17,9 +19,15 @@ class ModernTile extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
       child: InkWell(
-        onDoubleTap: () => Navigator.push(context,
-            MaterialPageRoute(builder: (context) => AddBookScreen(book))),
-        onTap: () => _showBottomSheet(context, book, 'time'),
+        onDoubleTap: () {
+          toCancelController();
+          Navigator.push(context,
+              MaterialPageRoute(builder: (context) => AddBookScreen(book)));
+        },
+        onTap: () {
+          _showBottomSheet(context, book, 'time');
+          toCancelController();
+        },
         child: Row(
           children: [
             Padding(
@@ -60,7 +68,7 @@ class ModernTile extends StatelessWidget {
                     Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        'Spent time reading: 15 days',
+                        'Spent time reading: $readTime days',
                         style: styleNumbers,
                       ),
                     ),
@@ -83,7 +91,7 @@ class ModernTile extends StatelessWidget {
           color: Colors.grey,
         ),
         const SizedBox(width: 4),
-        Text(book.review, style: styleNumbers),
+        Text((int.parse(book.review) + 1).toString(), style: styleNumbers),
         const SizedBox(width: 10),
         const Icon(Icons.circle, size: 3, color: Colors.grey),
         const SizedBox(width: 10),

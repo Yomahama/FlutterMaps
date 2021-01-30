@@ -108,9 +108,13 @@ class _MainScreenState extends State<MainScreen> {
 
       final int diff = date2.difference(date1).inDays;
 
+      if (diff < 0) {
+        return "0";
+      }
+
       return diff.toString();
     } else if (index == 0) {
-      return '0';
+      return "0";
     } else {
       final DateTime date2 =
           DateTime.parse(copy.elementAt(index).registrationDate);
@@ -118,6 +122,10 @@ class _MainScreenState extends State<MainScreen> {
           DateTime.parse(copy.elementAt(index - 1).registrationDate);
 
       final int diff = date2.difference(date1).inDays;
+
+      if (diff < 0) {
+        return "0";
+      }
 
       return diff.toString();
     }
@@ -175,8 +183,8 @@ class _MainScreenState extends State<MainScreen> {
       itemCount: books.length,
       itemBuilder: (context, index) {
         final book = books[index];
-        //return BookTileNew(book, '');
-        return ModernTile(book);
+        final readTime = spentTimeDates(index, _books);
+        return ModernTile(book, _closeTextField, readTime);
       },
     );
   }
@@ -187,7 +195,8 @@ class _MainScreenState extends State<MainScreen> {
       itemCount: _booksForSearch.length,
       itemBuilder: (context, index) {
         final book = _booksForSearch[index];
-        return ModernTile(book);
+        final readTime = spentTimeDates(index, _books);
+        return ModernTile(book, _closeTextField, readTime);
       },
     );
   }
@@ -235,7 +244,7 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   _showInfoDialog() {
-    showCupertinoDialog(
+    showDialog(
         context: context,
         builder: (BuildContext context) {
           return const AlertDialog(
