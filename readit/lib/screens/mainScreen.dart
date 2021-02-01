@@ -155,7 +155,7 @@ class _MainScreenState extends State<MainScreen> {
 
   Widget rowWithCancel() {
     return Row(children: [
-      textField(315),
+      textField(MediaQuery.of(context).size.width - 100), //315
       const SizedBox(width: 15),
       cancelButton(),
     ]);
@@ -164,7 +164,7 @@ class _MainScreenState extends State<MainScreen> {
   Widget rowWithoutCancel() {
     return Row(
       children: [
-        textField(375),
+        textField(MediaQuery.of(context).size.width - 40), //375
       ],
     );
   }
